@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Django migrations cache
+*/migrations/__pycache__/
+
+# Media & static files
+media/
+staticfiles/
+static/
+# Falls du statische Quelldateien im Repo hast, entferne "static/" wieder.
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing / Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+
+# Type checking / Linting
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.ruff_cache/
+
+# Build / Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Docker / Compose local overrides
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
+
+# Uploads / temporary files
+tmp/
+temp/
+*.tmp
+*.bak
