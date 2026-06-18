@@ -36,6 +36,7 @@ static/
 .idea/
 *.swp
 *.swo
+.claude
 
 # OS files
 .DS_Store

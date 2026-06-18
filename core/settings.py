@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+from datetime import timedelta
 from decouple import config
 from pathlib import Path
 
@@ -39,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
 #     auth
+    'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 
 #     apps
-    'auth_app'
+    'auth_app',
 ]
 
 MIDDLEWARE = [
@@ -111,11 +114,32 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+        'auth_app.api.authentication.JWTCookieAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 AUTH_USER_MODEL = 'auth_app.User'
+
+# E-Mail (Console-Backend für die Entwicklung; gibt Mails im Terminal aus)
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@videoflix.local')
+
+# Basis-URL des Frontends für Aktivierungs- und Passwort-Reset-Links
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
