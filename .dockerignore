@@ -1,0 +1,18 @@
+# Keep the build context (and image) small and free of secrets.
+.venv/
+__pycache__/
+*.py[cod]
+
+.git/
+.gitignore
+
+# Never bake secrets or local data into the image
+.env
+media/
+staticfiles/
+
+# Local tooling / editor noise
+.idea/
+.vscode/
+.claude/
+*.sqlite3
