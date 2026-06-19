@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 from datetime import timedelta
-from decouple import config
+from decouple import config, Csv
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -44,6 +44,12 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
 
+#     background tasks
+    'django_rq',
+
+#     third party
+    'corsheaders',
+
 #     apps
     'auth_app',
     'video_app',
@@ -51,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -142,6 +149,22 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@videoflix.loc
 # Basis-URL des Frontends für Aktivierungs- und Passwort-Reset-Links
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
 
+# CORS — allow the local frontend to call the API with cookies.
+# Credentials require explicit origins (no wildcard).
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default='http://localhost:4200,http://127.0.0.1:4200',
+    cast=Csv(),
+)
+CORS_ALLOW_CREDENTIALS = True
+
+# Trust the same origins for CSRF (needed for unsafe cross-origin requests).
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:4200,http://127.0.0.1:4200',
+    cast=Csv(),
+)
+
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
@@ -159,6 +182,29 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Media files (uploaded thumbnails and videos)
+# Media files (uploaded thumbnails, source videos and generated HLS output)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Redis / Background tasks (Django RQ)
+REDIS_HOST = config('REDIS_HOST', default='localhost')
+REDIS_PORT = config('REDIS_PORT', default=6379, cast=int)
+REDIS_DB = config('REDIS_DB', default=0, cast=int)
+REDIS_CACHE_DB = config('REDIS_CACHE_DB', default=1, cast=int)
+
+RQ_QUEUES = {
+    'default': {
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
+        'DB': REDIS_DB,
+        'DEFAULT_TIMEOUT': 1800,  # HLS conversion can take a while
+    },
+}
+
+# Redis as cache backend
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}',
+    },
+}
