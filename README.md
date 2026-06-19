@@ -20,15 +20,15 @@ are transcoded to multiple resolutions in the background with FFmpeg.
 
 ## Tech stack
 
-| Area | Technology |
-|------|-----------|
-| Language / Framework | Python 3.12, Django 6, Django REST Framework |
+| Area | Technology                                              |
+|------|---------------------------------------------------------|
+| Language / Framework | Python >3.12, Django 6, Django REST Framework           |
 | Auth | djangorestframework-simplejwt (JWT in HttpOnly cookies) |
-| Database | PostgreSQL |
-| Background jobs / Cache | Redis + Django RQ |
-| Video processing | FFmpeg |
-| Server | Gunicorn + WhiteNoise |
-| Deployment | Docker & Docker Compose |
+| Database | PostgreSQL                                              |
+| Background jobs / Cache | Redis + Django RQ                                       |
+| Video processing | FFmpeg                                                  |
+| Server | Gunicorn + WhiteNoise                                   |
+| Deployment | Docker & Docker Compose                                 |
 
 ## Project structure
 
