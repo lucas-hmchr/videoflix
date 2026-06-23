@@ -43,10 +43,11 @@ videoflix/
 │   ├── utils.py     # FFmpeg helpers, path/safety helpers
 │   ├── signals.py   # enqueue conversion on upload, cleanup on delete
 │   └── management/  # convert_video command (local, no worker needed)
-├── Dockerfile
+├── backend.Dockerfile      # web/worker image (Alpine + FFmpeg)
+├── backend.entrypoint.sh   # migrate, create superuser, start worker + Gunicorn
 ├── docker-compose.yml
 ├── requirements.txt
-└── .env.example     # template for your .env
+└── .env.template           # template for your .env
 ```
 
 ---
@@ -63,40 +64,36 @@ cd videoflix
 
 **2. Create your `.env`**
 ```bash
-cp .env.example .env
+cp .env.template .env
 ```
 Edit `.env` and set at least:
 - a strong `SECRET_KEY`
 - `DB_PASSWORD` (any value; the DB container is created with it)
+- `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` (your admin login)
 - **`DB_HOST=db`** and **`REDIS_HOST=redis`** (the Docker service names — important!)
 
 **3. Start the stack**
 ```bash
 docker compose up --build
 ```
-This starts four containers: `db` (PostgreSQL), `redis`, `web` (Gunicorn), and
-`worker` (FFmpeg conversions). The `web` container runs migrations and
-`collectstatic` automatically on startup.
+This starts three containers: `db` (PostgreSQL), `redis`, and `web`. On startup the
+`web` container automatically waits for the database, runs `collectstatic` and
+migrations, **creates the admin user from your `.env`**, starts the RQ worker, and
+launches Gunicorn.
 
-**4. Create an admin user** (in a second terminal, from the project folder)
-```bash
-docker compose exec web python manage.py createsuperuser
-```
-
-**5. Open the app**
+**4. Open the app**
 - API:   http://localhost:8000/api/
-- Admin: http://localhost:8000/admin/
+- Admin: http://localhost:8000/admin/ (log in with `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD`)
 
-That's it. Uploading a video in the admin now **auto-converts** in the background —
-watch it with `docker compose logs -f worker`.
+That's it — no manual `createsuperuser` needed. Uploading a video in the admin
+**auto-converts** in the background; watch it with `docker compose logs -f web`.
 
 ### Useful Docker commands
 
 | Command | Description |
 |---------|-------------|
 | `docker compose up -d` | Start in the background |
-| `docker compose logs -f web` | Tail the API logs |
-| `docker compose logs -f worker` | Watch video conversions |
+| `docker compose logs -f web` | Tail the API logs and watch video conversions |
 | `docker compose exec web python manage.py <cmd>` | Run any manage.py command |
 | `docker compose down` | Stop (data kept in volumes) |
 | `docker compose down -v` | Stop and wipe all data (fresh start) |
@@ -120,7 +117,7 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 
-cp .env.example .env   # set DB_HOST=localhost and REDIS_HOST=localhost
+cp .env.template .env   # set DB_HOST=localhost and REDIS_HOST=localhost
 
 python manage.py migrate
 python manage.py createsuperuser
@@ -139,10 +136,11 @@ python manage.py runserver
 
 ## Environment variables
 
-All configuration lives in `.env` (see `.env.example` for a full template).
+All configuration lives in `.env` (see `.env.template` for a full template).
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` | Admin auto-created on container start | `admin@example.com` |
 | `SECRET_KEY` | Django secret key | *(long random string)* |
 | `DEBUG` | Debug mode | `True` (local) / `False` (prod) |
 | `ALLOWED_HOSTS` | Allowed host names, comma-separated | `localhost,127.0.0.1` |
@@ -151,7 +149,10 @@ All configuration lives in `.env` (see `.env.example` for a full template).
 | `DB_PORT` | DB port | `5432` |
 | `REDIS_HOST` | Redis host — `redis` in Docker, `localhost` locally | `redis` |
 | `REDIS_PORT` / `REDIS_DB` / `REDIS_CACHE_DB` | Redis port and DB slots | `6379` / `0` / `1` |
-| `EMAIL_BACKEND` | Email backend (console prints to terminal) | console backend |
+| `REDIS_LOCATION` | Full Redis URL for the cache | `redis://redis:6379/1` |
+| `EMAIL_BACKEND` | Email backend (console prints to log by default) | console / smtp backend |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | SMTP settings (when using the SMTP backend) | |
+| `EMAIL_USE_TLS` / `EMAIL_USE_SSL` | SMTP encryption | `True` / `False` |
 | `DEFAULT_FROM_EMAIL` | Sender address | `noreply@videoflix.local` |
 | `FRONTEND_URL` | Frontend base URL for activation/reset links | `http://localhost:4200` |
 | `CORS_ALLOWED_ORIGINS` | Frontend origins allowed to call the API | `http://localhost:4200` |

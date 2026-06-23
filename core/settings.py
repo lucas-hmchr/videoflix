@@ -140,11 +140,19 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'auth_app.User'
 
-# E-Mail (Console-Backend für die Entwicklung; gibt Mails im Terminal aus)
+# E-Mail. Defaults to the console backend (prints mails to the log) for local dev.
+# Set EMAIL_BACKEND to the SMTP backend in .env to send real mail via the
+# EMAIL_HOST/PORT/... settings below.
 EMAIL_BACKEND = config(
     'EMAIL_BACKEND',
     default='django.core.mail.backends.console.EmailBackend',
 )
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@videoflix.local')
 
 # Basis-URL des Frontends für Aktivierungs- und Passwort-Reset-Links
@@ -182,7 +190,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'static'
 
 # WhiteNoise serves collected static files under Gunicorn (no separate web server).
 STORAGES = {
@@ -213,10 +221,14 @@ RQ_QUEUES = {
     },
 }
 
-# Redis as cache backend
+# Redis as cache backend. REDIS_LOCATION (e.g. redis://redis:6379/1) overrides the
+# composed URL; falls back to the host/port/cache-db values above.
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}',
+        'LOCATION': config(
+            'REDIS_LOCATION',
+            default=f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}',
+        ),
     },
 }

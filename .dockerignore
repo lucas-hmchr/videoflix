@@ -9,6 +9,7 @@ __pycache__/
 # Never bake secrets or local data into the image
 .env
 media/
+static/
 staticfiles/
 
 # Local tooling / editor noise

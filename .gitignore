@@ -29,7 +29,7 @@ static/
 # Environment variables
 .env
 .env.*
-!.env.example
+!.env.template
 
 # IDEs / Editors
 .vscode/

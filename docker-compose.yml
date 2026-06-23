@@ -1,59 +1,43 @@
 services:
   # PostgreSQL database
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
+    container_name: videoflix_database
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - postgres_data:/var/lib/postgresql
 
   # Redis: background-job queue + cache
   redis:
-    image: redis:7-alpine
+    image: redis:latest
+    container_name: videoflix_redis
     volumes:
       - redis_data:/data
 
-  # Django API served by Gunicorn
+  # Django backend (Gunicorn) + RQ worker, started by backend.entrypoint.sh
   web:
-    build: .
-    command: >
-      sh -c "python manage.py migrate --noinput &&
-             python manage.py collectstatic --noinput &&
-             gunicorn core.wsgi:application --bind 0.0.0.0:8000"
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: videoflix_backend
     env_file: .env
+    environment:
+      PYTHONUNBUFFERED: 1
     ports:
       - "8000:8000"
     volumes:
-      - media_data:/app/media
-      - static_data:/app/staticfiles
+      - .:/app
+      - videoflix_media:/app/media
+      - videoflix_static:/app/static
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
-  # Background worker: runs FFmpeg HLS conversions off the Redis queue
-  worker:
-    build: .
-    command: python manage.py rqworker default
-    env_file: .env
-    volumes:
-      - media_data:/app/media
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - db
+      - redis
 
 volumes:
-  postgres_data:   # database survives restarts
-  redis_data:      # queued jobs survive restarts
-  media_data:      # uploads + generated HLS, shared by web and worker
-  static_data:     # collected static files
+  postgres_data:
+  redis_data:
+  videoflix_media:
+  videoflix_static:
