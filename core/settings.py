@@ -155,6 +155,15 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@videoflix.local')
 
+# Log our own app messages (e.g. the clean activation/reset link, handy when the
+# console email backend prints the quoted-printable encoded version) to stdout.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {'auth_app': {'handlers': ['console'], 'level': 'INFO'}},
+}
+
 # Base URL of the frontend, used to build activation and password-reset links.
 # The frontend is served by Live Server on port 5500; override via FRONTEND_URL
 # in .env if it runs elsewhere.

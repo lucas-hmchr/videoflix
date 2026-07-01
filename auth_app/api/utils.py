@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -7,6 +9,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def encode_uid(user):
@@ -33,38 +36,39 @@ def check_token(user, token):
     return default_token_generator.check_token(user, token)
 
 
-def send_activation_email(user, token):
-    """Send the account activation link to the user via email."""
-    link = f"{settings.FRONTEND_URL}/pages/auth/activate.html?uid={encode_uid(user)}&token={token}"
-    html_body = render_to_string('emails/activation_email.html', {
-        'user_email': user.email,
-        'activation_link': link,
-    })
+def _send_html_email(subject, template, context, recipient, text_body):
+    """Render an HTML template and send it as a multipart (text + HTML) email."""
+    html_body = render_to_string(template, context)
     email = EmailMultiAlternatives(
-        subject='Activate your Videoflix account',
-        body=f'Please activate your account: {link}',
+        subject=subject,
+        body=text_body,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[user.email],
+        to=[recipient],
     )
     email.attach_alternative(html_body, 'text/html')
     email.send()
+
+
+def send_activation_email(user, token):
+    """Send the account activation link to the user via email."""
+    link = f"{settings.FRONTEND_URL}/pages/auth/activate.html?uid={encode_uid(user)}&token={token}"
+    logger.info('Activation link for %s: %s', user.email, link)
+    _send_html_email(
+        'Activate your Videoflix account', 'emails/activation_email.html',
+        {'user_email': user.email, 'activation_link': link},
+        user.email, f'Please activate your account: {link}',
+    )
 
 
 def send_password_reset_email(user, token):
     """Send the password reset link to the user via email."""
     link = f"{settings.FRONTEND_URL}/pages/auth/confirm_password.html?uid={encode_uid(user)}&token={token}"
-    html_body = render_to_string('emails/password_reset_email.html', {
-        'user_email': user.email,
-        'reset_link': link,
-    })
-    email = EmailMultiAlternatives(
-        subject='Reset your Videoflix password',
-        body=f'Reset your password here: {link}',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[user.email],
+    logger.info('Password reset link for %s: %s', user.email, link)
+    _send_html_email(
+        'Reset your Videoflix password', 'emails/password_reset_email.html',
+        {'user_email': user.email, 'reset_link': link},
+        user.email, f'Reset your password here: {link}',
     )
-    email.attach_alternative(html_body, 'text/html')
-    email.send()
 
 
 def set_access_cookie(response, access):
