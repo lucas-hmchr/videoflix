@@ -158,14 +158,90 @@ All configuration lives in `.env` (see `.env.template` for a full template).
 | `CORS_ALLOWED_ORIGINS` | Frontend origins allowed to call the API | `http://localhost:5500` |
 | `CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF | `http://localhost:5500` |
 
-> **Note:** Emails (activation, password reset) use the **console backend** by
-> default — they are printed to the server logs instead of being sent. Configure a
-> real SMTP backend via `EMAIL_BACKEND` for production.
+### Email sending (activation & password reset)
+
+The app sends two emails: the **activation link** on registration and the
+**password reset link**. Where they end up depends solely on `EMAIL_BACKEND` in
+your `.env` — the rest of the project (Docker, frontend) does **not** need to be
+changed.
+
+**1. Preview only, without real delivery (default):**
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+```
+
+The email is not sent but printed to the backend log. In addition, the finished
+link is logged on its own line (`INFO Activation link for ...`) that you can copy
+directly.
+
+**2. Real emails to a real inbox (your own SMTP server):**
+
+You do **not** need to run your own mail server — just enter the SMTP credentials
+of *your* email provider in the `.env`. These are the exact values you would also
+use in Thunderbird/Outlook for outgoing mail ("Outgoing/SMTP"):
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=<your-provider-smtp-server>     # e.g. smtp.gmail.com, mail.your-domain.com
+EMAIL_PORT=587                              # 587 = STARTTLS, 465 = SSL
+EMAIL_HOST_USER=<your-email-address>
+EMAIL_HOST_PASSWORD=<your-mailbox-password> # Gmail: 16-digit App Password
+EMAIL_USE_TLS=True                          # port 465: set to False
+EMAIL_USE_SSL=False                         # port 465: set to True
+DEFAULT_FROM_EMAIL=<your-email-address>     # must match the SMTP account
+```
+
+Common providers:
+
+| Provider | `EMAIL_HOST` | Port / Encryption | Password |
+|----------|--------------|-------------------|----------|
+| Gmail | `smtp.gmail.com` | 587 / TLS | **App Password** (2FA required, not your normal password) |
+| Own domain (shared hosting, e.g. IONOS/All-Inkl/server-center) | `mail.your-domain.com` | 587 / TLS (or 465 / SSL) | normal mailbox password |
+| Outlook/Microsoft 365 | `smtp.office365.com` | 587 / TLS | account password |
+
+#### Quick start with Gmail (recommended for testing)
+
+1. **Create an App Password** (Gmail does not allow a normal password for SMTP):
+   - Enable two-factor authentication: <https://myaccount.google.com/security>
+   - Create an App Password: <https://myaccount.google.com/apppasswords>
+   - You receive 16 characters like `abcd efgh ijkl mnop`.
+2. **Set these four values in your `.env`** (leave the rest as shown above):
+
+   ```env
+   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_HOST_USER=your.address@gmail.com           # <- your Gmail address
+   EMAIL_HOST_PASSWORD=abcdefghijklmnop             # <- App Password (no spaces)
+   DEFAULT_FROM_EMAIL=your.address@gmail.com         # <- the same Gmail address
+   ```
+
+3. Restart the container and test delivery (see below).
+
+Then restart the backend container so the `.env` is re-read:
+
+```bash
+docker compose up -d --build web
+```
+
+Test delivery without registering (built-in Django command):
+
+```bash
+docker compose exec web python manage.py sendtestemail your.address@gmail.com
+```
+
+> **Important:**
+> - `EMAIL_HOST` must match the account in `EMAIL_HOST_USER`. Sending a
+>   `@my-domain.com` address through `smtp.gmail.com` fails with
+>   `535 Username and Password not accepted`.
+> - `DEFAULT_FROM_EMAIL` should be the same address as `EMAIL_HOST_USER` — most
+>   providers forbid spoofing a foreign sender.
+> - `.env` is in `.gitignore`; your credentials must **not** be committed.
 
 > **Frontend URL:** activation and password-reset links are built from
 > `FRONTEND_URL`. The frontend runs on **Live Server (port 5500)**, so this must be
 > `http://localhost:5500`. If `FRONTEND_URL` is missing from `.env`, the link falls
-> back to this default.
+> back to this default. The Live Server must be running to open the link.
 
 ---
 

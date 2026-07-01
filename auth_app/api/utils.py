@@ -10,6 +10,7 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+LOGO_PATH = settings.BASE_DIR / 'templates' / 'emails' / 'logo.png'
 
 
 def encode_uid(user):
@@ -36,10 +37,23 @@ def check_token(user, token):
     return default_token_generator.check_token(user, token)
 
 
+class _InlineLogoEmail(EmailMultiAlternatives):
+    """Multipart email that embeds the Videoflix logo inline as cid:logo."""
+
+    def _add_attachments(self, msg):
+        """Attach the logo to the HTML part so it becomes multipart/related."""
+        html_part = msg.get_payload()[-1]
+        with open(LOGO_PATH, 'rb') as logo_file:
+            html_part.add_related(
+                logo_file.read(), maintype='image', subtype='png',
+                cid='<logo>', disposition='inline', filename='logo.png',
+            )
+
+
 def _send_html_email(subject, template, context, recipient, text_body):
     """Render an HTML template and send it as a multipart (text + HTML) email."""
     html_body = render_to_string(template, context)
-    email = EmailMultiAlternatives(
+    email = _InlineLogoEmail(
         subject=subject,
         body=text_body,
         from_email=settings.DEFAULT_FROM_EMAIL,
