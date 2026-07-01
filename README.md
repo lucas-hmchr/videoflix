@@ -72,7 +72,16 @@ Edit `.env` and set at least:
 - `DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` (your admin login)
 - **`DB_HOST=db`** and **`REDIS_HOST=redis`** (the Docker service names — important!)
 
-**3. Start the stack**
+**3. Configure email (activation & password-reset mails)**
+
+Out of the box the app uses the **console backend**: activation and password-reset
+mails are printed to the backend log, not delivered to an inbox — fine for a first
+run. To send **real emails** to a real inbox, enter your own SMTP credentials in
+`.env`. See [Email sending](#email-sending-activation--password-reset) below for
+step-by-step instructions (incl. a Gmail quick start). You can do this now or come
+back to it later; the rest of the app runs either way.
+
+**4. Start the stack**
 ```bash
 docker compose up --build
 ```
@@ -81,7 +90,7 @@ This starts three containers: `db` (PostgreSQL), `redis`, and `web`. On startup 
 migrations, **creates the admin user from your `.env`**, starts the RQ worker, and
 launches Gunicorn.
 
-**4. Open the app**
+**5. Open the app**
 - API:   http://localhost:8000/api/
 - Admin: http://localhost:8000/admin/ (log in with `DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD`)
 
@@ -123,6 +132,10 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
+
+**Email:** same as under Docker — mails are printed to the console log by default.
+To send real emails, set the SMTP variables in `.env`
+(see [Email sending](#email-sending-activation--password-reset)).
 
 **Converting uploaded videos locally:**
 - **With Redis running:** start a worker in a separate terminal —
