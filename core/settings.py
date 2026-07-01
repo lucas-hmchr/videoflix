@@ -155,14 +155,16 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@videoflix.local')
 
-# Basis-URL des Frontends für Aktivierungs- und Passwort-Reset-Links
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:4200')
+# Base URL of the frontend, used to build activation and password-reset links.
+# The frontend is served by Live Server on port 5500; override via FRONTEND_URL
+# in .env if it runs elsewhere.
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5500')
 
 # CORS — allow the local frontend to call the API with cookies.
 # Credentials require explicit origins (no wildcard).
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:4200,http://127.0.0.1:4200',
+    default='http://localhost:5500,http://127.0.0.1:5500',
     cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = True
@@ -170,7 +172,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Trust the same origins for CSRF (needed for unsafe cross-origin requests).
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:4200,http://127.0.0.1:4200',
+    default='http://localhost:5500,http://127.0.0.1:5500',
     cast=Csv(),
 )
 

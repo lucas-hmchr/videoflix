@@ -154,13 +154,18 @@ All configuration lives in `.env` (see `.env.template` for a full template).
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | SMTP settings (when using the SMTP backend) | |
 | `EMAIL_USE_TLS` / `EMAIL_USE_SSL` | SMTP encryption | `True` / `False` |
 | `DEFAULT_FROM_EMAIL` | Sender address | `noreply@videoflix.local` |
-| `FRONTEND_URL` | Frontend base URL for activation/reset links | `http://localhost:4200` |
-| `CORS_ALLOWED_ORIGINS` | Frontend origins allowed to call the API | `http://localhost:4200` |
-| `CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF | `http://localhost:4200` |
+| `FRONTEND_URL` | Frontend base URL for activation/reset links | `http://localhost:5500` |
+| `CORS_ALLOWED_ORIGINS` | Frontend origins allowed to call the API | `http://localhost:5500` |
+| `CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF | `http://localhost:5500` |
 
 > **Note:** Emails (activation, password reset) use the **console backend** by
 > default — they are printed to the server logs instead of being sent. Configure a
 > real SMTP backend via `EMAIL_BACKEND` for production.
+
+> **Frontend URL:** activation and password-reset links are built from
+> `FRONTEND_URL`. The frontend runs on **Live Server (port 5500)**, so this must be
+> `http://localhost:5500`. If `FRONTEND_URL` is missing from `.env`, the link falls
+> back to this default.
 
 ---
 

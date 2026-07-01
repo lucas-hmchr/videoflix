@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
@@ -35,23 +36,35 @@ def check_token(user, token):
 def send_activation_email(user, token):
     """Send the account activation link to the user via email."""
     link = f"{settings.FRONTEND_URL}/api/activate/{encode_uid(user)}/{token}/"
-    send_mail(
+    html_body = render_to_string('emails/activation_email.html', {
+        'user_email': user.email,
+        'activation_link': link,
+    })
+    email = EmailMultiAlternatives(
         subject='Activate your Videoflix account',
-        message=f'Please activate your account: {link}',
+        body=f'Please activate your account: {link}',
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
+        to=[user.email],
     )
+    email.attach_alternative(html_body, 'text/html')
+    email.send()
 
 
 def send_password_reset_email(user, token):
     """Send the password reset link to the user via email."""
     link = f"{settings.FRONTEND_URL}/api/password_confirm/{encode_uid(user)}/{token}/"
-    send_mail(
+    html_body = render_to_string('emails/password_reset_email.html', {
+        'user_email': user.email,
+        'reset_link': link,
+    })
+    email = EmailMultiAlternatives(
         subject='Reset your Videoflix password',
-        message=f'Reset your password here: {link}',
+        body=f'Reset your password here: {link}',
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
+        to=[user.email],
     )
+    email.attach_alternative(html_body, 'text/html')
+    email.send()
 
 
 def set_access_cookie(response, access):
