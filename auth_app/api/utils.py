@@ -35,7 +35,7 @@ def check_token(user, token):
 
 def send_activation_email(user, token):
     """Send the account activation link to the user via email."""
-    link = f"{settings.FRONTEND_URL}/api/activate/{encode_uid(user)}/{token}/"
+    link = f"{settings.FRONTEND_URL}/pages/auth/activate.html?uid={encode_uid(user)}&token={token}"
     html_body = render_to_string('emails/activation_email.html', {
         'user_email': user.email,
         'activation_link': link,
@@ -52,7 +52,7 @@ def send_activation_email(user, token):
 
 def send_password_reset_email(user, token):
     """Send the password reset link to the user via email."""
-    link = f"{settings.FRONTEND_URL}/api/password_confirm/{encode_uid(user)}/{token}/"
+    link = f"{settings.FRONTEND_URL}/pages/auth/confirm_password.html?uid={encode_uid(user)}&token={token}"
     html_body = render_to_string('emails/password_reset_email.html', {
         'user_email': user.email,
         'reset_link': link,

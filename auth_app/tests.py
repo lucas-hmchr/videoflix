@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs, urlsplit
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -35,9 +37,10 @@ class RegistrationFlowTests(TestCase):
         self.client.post(reverse('register'), self.payload, format='json')
 
         body = mail.outbox[0].body
-        # The link must be built from the configured FRONTEND_URL (port 5500).
+        # The link must point at the frontend's activation page (port 5500),
+        # which itself calls the backend API via fetch().
         self.assertIn(settings.FRONTEND_URL, body)
-        self.assertIn('http://localhost:5500/api/activate/', body)
+        self.assertIn('http://localhost:5500/pages/auth/activate.html?uid=', body)
 
     @override_settings(FRONTEND_URL='http://localhost:5500')
     def test_full_flow_activate_then_login(self):
@@ -45,10 +48,13 @@ class RegistrationFlowTests(TestCase):
         self.client.post(reverse('register'), self.payload, format='json')
         user = User.objects.get(email=self.payload['email'])
 
-        # Pull uid/token straight out of the emailed link and hit activate.
+        # Pull uid/token out of the emailed frontend link's query string, the
+        # same way the frontend's JS does, and hit the backend activate API.
         link = mail.outbox[0].body.split('http://localhost:5500', 1)[1].strip()
-        self.assertTrue(link.startswith('/api/activate/'))
-        response = self.client.get(link)
+        self.assertTrue(link.startswith('/pages/auth/activate.html?'))
+        query = parse_qs(urlsplit(link).query)
+        uid, token = query['uid'][0], query['token'][0]
+        response = self.client.get(reverse('activate', args=[uid, token]))
         self.assertEqual(response.status_code, 200)
 
         user.refresh_from_db()
