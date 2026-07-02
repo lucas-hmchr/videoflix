@@ -140,13 +140,17 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'auth_app.User'
 
-# E-Mail. Defaults to the console backend (prints mails to the log) for local dev.
-# Set EMAIL_BACKEND to the SMTP backend in .env to send real mail via the
-# EMAIL_HOST/PORT/... settings below.
-EMAIL_BACKEND = config(
-    'EMAIL_BACKEND',
-    default='django.core.mail.backends.console.EmailBackend',
-)
+# E-Mail. Sends real mail via SMTP by default, using the EMAIL_HOST/PORT/...
+# settings below. For local dev set EMAIL_CONSOLE=True in .env to print mails to
+# the console instead of sending them.
+EMAIL_CONSOLE = config('EMAIL_CONSOLE', default=False, cast=bool)
+if EMAIL_CONSOLE:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = config(
+        'EMAIL_BACKEND',
+        default='django.core.mail.backends.smtp.EmailBackend',
+    )
 EMAIL_HOST = config('EMAIL_HOST', default='')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')

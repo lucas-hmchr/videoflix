@@ -163,7 +163,8 @@ All configuration lives in `.env` (see `.env.template` for a full template).
 | `REDIS_HOST` | Redis host — `redis` in Docker, `localhost` locally | `redis` |
 | `REDIS_PORT` / `REDIS_DB` / `REDIS_CACHE_DB` | Redis port and DB slots | `6379` / `0` / `1` |
 | `REDIS_LOCATION` | Full Redis URL for the cache | `redis://redis:6379/1` |
-| `EMAIL_BACKEND` | Email backend (console prints to log by default) | console / smtp backend |
+| `EMAIL_CONSOLE` | Print mails to the console instead of sending via SMTP | `False` |
+| `EMAIL_BACKEND` | Email backend (SMTP by default; ignored when `EMAIL_CONSOLE=True`) | smtp backend |
 | `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | SMTP settings (when using the SMTP backend) | |
 | `EMAIL_USE_TLS` / `EMAIL_USE_SSL` | SMTP encryption | `True` / `False` |
 | `DEFAULT_FROM_EMAIL` | Sender address | `noreply@videoflix.local` |
@@ -174,28 +175,17 @@ All configuration lives in `.env` (see `.env.template` for a full template).
 ### Email sending (activation & password reset)
 
 The app sends two emails: the **activation link** on registration and the
-**password reset link**. Where they end up depends solely on `EMAIL_BACKEND` in
-your `.env` — the rest of the project (Docker, frontend) does **not** need to be
-changed.
+**password reset link**. By default they are sent via **SMTP**; the console
+preview is toggled with `EMAIL_CONSOLE` in your `.env` — the rest of the project
+(Docker, frontend) does **not** need to be changed.
 
-**1. Preview only, without real delivery (default):**
-
-```env
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-```
-
-The email is not sent but printed to the backend log. In addition, the finished
-link is logged on its own line (`INFO Activation link for ...`) that you can copy
-directly.
-
-**2. Real emails to a real inbox (your own SMTP server):**
+**1. Real emails to a real inbox (your own SMTP server — default):**
 
 You do **not** need to run your own mail server — just enter the SMTP credentials
 of *your* email provider in the `.env`. These are the exact values you would also
 use in Thunderbird/Outlook for outgoing mail ("Outgoing/SMTP"):
 
 ```env
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=<your-provider-smtp-server>     # e.g. smtp.gmail.com, mail.your-domain.com
 EMAIL_PORT=587                              # 587 = STARTTLS, 465 = SSL
 EMAIL_HOST_USER=<your-email-address>
@@ -213,6 +203,16 @@ Common providers:
 | Own domain (shared hosting, e.g. IONOS/All-Inkl/server-center) | `mail.your-domain.com` | 587 / TLS (or 465 / SSL) | normal mailbox password |
 | Outlook/Microsoft 365 | `smtp.office365.com` | 587 / TLS | account password |
 
+**2. Preview only, without real delivery (local testing):**
+
+```env
+EMAIL_CONSOLE=True
+```
+
+The email is not sent but printed to the backend log (no SMTP settings needed).
+In addition, the finished link is logged on its own line
+(`INFO Activation link for ...`) that you can copy directly.
+
 #### Quick start with Gmail (recommended for testing)
 
 1. **Create an App Password** (Gmail does not allow a normal password for SMTP):
@@ -222,7 +222,6 @@ Common providers:
 2. **Set these four values in your `.env`** (leave the rest as shown above):
 
    ```env
-   EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
    EMAIL_HOST=smtp.gmail.com
    EMAIL_HOST_USER=your.address@gmail.com           # <- your Gmail address
    EMAIL_HOST_PASSWORD=abcdefghijklmnop             # <- App Password (no spaces)
