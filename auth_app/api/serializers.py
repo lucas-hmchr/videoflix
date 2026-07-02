@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 
 User = get_user_model()
 
@@ -42,9 +43,9 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         user = authenticate(email=attrs['email'], password=attrs['password'])
         if user is None:
-            raise serializers.ValidationError('Invalid email or password.')
+            raise AuthenticationFailed('Invalid email or password.')
         if not user.is_active:
-            raise serializers.ValidationError('Account is not activated.')
+            raise AuthenticationFailed('Account is not activated.')
         attrs['user'] = user
         return attrs
 
